@@ -70,8 +70,8 @@ curl http://localhost:9100/metrics
 ## Docker Compose 服务一览
 | 服务名       | 镜像版本                          | 核心功能                     | 暴露端口 |
 | ------------ | --------------------------------- | ---------------------------- | -------- |
-| collector    | 你的项目/collector:latest         | 核心数据采集、业务逻辑处理   | 内部通信 |
-| exporter     | 你的项目/exporter:latest          | Prometheus指标格式暴露       | 9100     |
+| collector    | zzl/collector:latest         | 核心数据采集、业务逻辑处理   | 内部通信 |
+| exporter     | zzl/exporter:latest          | Prometheus指标格式暴露       | 9100     |
 | prometheus   | prom/prometheus:v2.47.0           | 指标存储、告警规则计算、拉取 | 9090     |
 | grafana      | grafana/grafana:10.1.0            | 监控数据可视化、大盘展示     | 3000     |
 | alertmanager | prom/alertmanager:v0.26.0         | 告警聚合、分发、邮件通知     | 9093     |
