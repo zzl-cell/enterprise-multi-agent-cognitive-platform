@@ -1,86 +1,60 @@
-"""
-项目整体架构设计
-基于监控采集 + 指标暴露 + 故障注入 核心模块
-可独立创建 architecture 分支存放
-"""
-import threading
-import time
+# ==========================
+# 核心技术笔记 | 项目核心代码
+# 对应上文：监控采集 + Exporter + 故障注入 + 配置管理
+# ==========================
+
+# 1. 系统指标采集核心（psutil 基础）
 import psutil
+import time
+
+def get_core_metrics():
+    """采集CPU/内存/系统负载核心代码"""
+    cpu = psutil.cpu_percent(interval=1)
+    mem = psutil.virtual_memory().percent
+    load = round(psutil.getloadavg()[0], 2)
+    return cpu, mem, load
+
+# 2. Prometheus Exporter 基础服务
 from flask import Flask
+app = Flask(__name__)
 
-# --------------------------
-# 1. 核心数据采集模块
-# --------------------------
-class MetricsCollector:
-    def __init__(self):
-        self.interval = 5
-        self.cpu_usage = 0
-        self.mem_usage = 0
-        self.system_load = 0
+@app.route("/metrics")
+def metrics_api():
+    """暴露指标接口（对接Prometheus）"""
+    cpu, mem, load = get_core_metrics()
+    return (
+        f"# 核心监控指标\n"
+        f"cpu_usage {cpu}\n"
+        f"mem_usage {mem}\n"
+        f"system_load {load}\n"
+    )
 
-    def collect(self):
-        """持续采集系统指标"""
-        while True:
-            self.cpu_usage = psutil.cpu_percent(interval=1)
-            self.mem_usage = psutil.virtual_memory().percent
-            self.system_load = round(psutil.getloadavg()[0], 2)
-            time.sleep(self.interval)
+# 3. 配置热加载基础（.env 配置读取）
+def load_config():
+    """加载环境配置，支持热重载"""
+    config = {}
+    with open(".env", "r", encoding="utf-8") as f:
+        for line in f.readlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                k, v = line.split("=", 1)
+                config[k] = v
+    return config
 
-# --------------------------
-# 2. Prometheus 指标暴露模块
-# --------------------------
-class MetricsExporter:
-    def __init__(self, port=9100):
-        self.port = port
-        self.app = Flask(__name__)
-        self.collector = None
+# 4. 故障注入核心代码（混沌工程）
+import multiprocessing
+import os
 
-    def set_collector(self, collector):
-        self.collector = collector
+def cpu_fault_inject():
+    """CPU 满载故障注入"""
+    p = multiprocessing.Process(target=os.system, args=("stress-ng --cpu 0 -q",))
+    p.start()
 
-    def run(self):
-        """启动HTTP服务暴露指标"""
-        @self.app.route("/metrics")
-        def metrics():
-            return (
-                f"cpu_usage {self.collector.cpu_usage}\n"
-                f"mem_usage {self.collector.mem_usage}\n"
-                f"system_load {self.collector.system_load}\n"
-            )
-        self.app.run(host="0.0.0.0", port=self.port)
-
-# --------------------------
-# 3. 混沌工程故障注入模块
-# --------------------------
-class FaultInjector:
-    @staticmethod
-    def cpu_stress():
-        """CPU满载故障注入"""
-        import os
-        os.popen("stress-ng --cpu 0 -q")
-
-# --------------------------
-# 4. 项目总架构（服务调度）
-# --------------------------
-class ProjectArchitecture:
-    def __init__(self):
-        # 初始化核心组件
-        self.collector = MetricsCollector()
-        self.exporter = MetricsExporter(port=9100)
-        self.exporter.set_collector(self.collector)
-        self.injector = FaultInjector()
-
-    def start(self):
-        """启动全架构服务"""
-        # 多线程并发运行
-        threading.Thread(target=self.collector.collect, daemon=True).start()
-        threading.Thread(target=self.exporter.run, daemon=True).start()
-        print("✅ 项目架构启动成功")
-        
-        # 保持服务运行
-        while True:
-            time.sleep(1)
-
+# 5. 服务主入口（整合所有核心技术）
 if __name__ == "__main__":
-    arch = ProjectArchitecture()
-    arch.start()
+    # 加载配置
+    config = load_config()
+    print("配置加载完成:", config)
+    
+    # 启动 Exporter 服务
+    app.run(host="0.0.0.0", port=9100)
