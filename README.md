@@ -142,7 +142,7 @@ SMTP_PASS=your-pass
 
 ## 学习文档
 - [docs/architecture.md](docs/architecture.md)：项目整体架构设计详解
-- [docs/tech_notes.md](docs/tech_notes.md)：Prometheus/Grafana核心技术笔记
+- https://github.com/zzl-cell/enterprise-multi-agent-cognitive-platform：Prometheus/Grafana核心技术笔记
 - [docs/postmortem-case1.md](docs/postmortem-case1.md)：故障复盘案例1
 - [docs/postmortem-case2.md](docs/postmortem-case2.md)：故障复盘案例2
 
